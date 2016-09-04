@@ -5,7 +5,6 @@ import pygame
 import sys
 
 from datetime import datetime
-from Queue import Queue
 
 import gphoto2 as gp
 
