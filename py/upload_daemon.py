@@ -27,7 +27,6 @@ def upload_photo(f):
     print "Moving {0}".format(file_name)
     os.rename(os.path.join(captured_path, file_name),
               os.path.join(uploaded_path, file_name))
-    pass
 
 
 def main():
