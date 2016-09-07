@@ -3,6 +3,7 @@ import sys
 import boto
 import gcs_oauth2_boto_plugin
 from firebase import firebase
+from ConfigParser import ConfigParser
 
 from boto.gs.connection import GSConnection
 from boto.gs.key import Key
@@ -14,23 +15,28 @@ captured_path = '/home/pi/photobooth/captured'
 uploaded_path = '/home/pi/photobooth/uploaded'
 py_path = '/home/pi/photobooth/py'
 
-gs_project_id = '' # my project
+config = ConfigParser()
+config.read(os.path.join(py_path,'config.secret'))
+
+gs_project_id = config.get('Google', 'ProjectId') # my project
 gs_bucket_name = gs_project_id + '.appspot.com'
 gs_bucket_destination_prefix = 'photobooth'
 
 conn = GSConnection()
 bucket = conn.get_bucket(gs_bucket_name)
 
-firebase_secret = '' # TODO: REMOVE!
+firebase_secret = config.get('Firebase', 'Secret')
 firebase_destination_prefix = 'images'
 
-auth = firebase.FirebaseAuthentication(firebase_secret, '') # my email
+auth = firebase.FirebaseAuthentication(firebase_secret, config.get('Firebase', 'Email')) # my email
 user = auth.get_user()
-app = firebase.FirebaseApplication('', # the firebase app
+app = firebase.FirebaseApplication(config.get('Firebase', 'App'),
                                    authentication=None)
 app.authentication = auth
 
-i = 0
+#Find the maximum key in Firebase right now, assume format is [0-9]{5}"""
+all_things = app.get('/images', None)
+i = int(max(all_things.keys())) if all_things else 0
 
 
 def find_and_upload_photos():
@@ -58,7 +64,7 @@ def upload_photo(file_path):
 
     metadata = {'fileName': file_name}
     app.put('/{0}'.format(firebase_destination_prefix),
-            'key{0}'.format(str(i)), metadata)
+            '%.5i' % i, metadata)
 
     print "Moving {0}".format(file_name)
     os.rename(os.path.join(captured_path, file_name),
